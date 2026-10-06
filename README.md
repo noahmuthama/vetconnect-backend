@@ -1,0 +1,104 @@
+# VetConnect API
+
+VetConnect is a FastAPI service for connecting pet owners with veterinarians through location-aware care requests. This repository is the productionized backend foundation for the VetConnect API reference website and future client applications.
+
+> The current implementation is an infrastructure baseline. It should be deployed with HTTPS, a managed PostgreSQL database, secret management, monitoring, and a human-controlled veterinarian verification workflow before handling real users or sensitive animal-care records.
+
+## What is included
+
+| Area | Current behavior |
+|---|---|
+| Authentication | JWT bearer tokens, bcrypt password hashing, inactive-user rejection, and configurable expiry. |
+| Roles | Client, veterinarian, and administrator role dependencies are enforced at the route layer; administrator signup is disabled. |
+| Pets | Clients can create and list only their own pet profiles. |
+| Dispatching | Clients create requests; verified, available veterinarians can search by radius and accept atomically. |
+| Lifecycle | Requests move through `pending`, `accepted`, `in_progress`, `completed`, or `cancelled` with actor-specific rules. |
+| Persistence | SQLite is supported for local development; PostgreSQL is supported through `DATABASE_URL`. |
+| Migrations | Alembic owns schema changes. The API does not mutate the schema during startup. |
+| Operations | `/healthz` is available for service health checks, CORS is configured from settings, and Docker staging files are included. |
+
+## Local development
+
+Create a virtual environment, install the pinned dependencies, copy `.env.example` to `.env`, and then apply the schema migration:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+alembic upgrade head
+uvicorn main:app --reload --port 8000
+```
+
+The interactive API documentation is available at `http://localhost:8000/docs`. The local default uses `sqlite:///./vet_connect.db`; for PostgreSQL, set `DATABASE_URL` to a `postgresql+psycopg://...` connection string and run the same migration command.
+
+## Configuration
+
+The service reads environment variables through `settings.py`. Production must use a strong `JWT_SECRET_KEY`, a managed PostgreSQL connection, explicit CORS origins, and a deployment-level secret manager. Never commit `.env` or any real credential to source control.
+
+## Endpoint groups
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/healthz` | Public | Report service availability. |
+| `POST` | `/register` | Public | Register a client or veterinarian account. |
+| `POST` | `/token` | Public | Exchange credentials for a bearer token. |
+| `GET` | `/me` | Authenticated | Return the current profile and verification state. |
+| `POST` | `/pets/` | Client | Create a pet owned by the current client. |
+| `GET` | `/pets/` | Client | List the current client's pets. |
+| `PUT` | `/vets/me/availability` | Veterinarian | Update availability and dispatch coordinates after verification. |
+| `GET` | `/admin/vets/pending` | Administrator | List veterinarian accounts awaiting review. |
+| `PUT` | `/admin/vets/{vet_id}/verification` | Administrator | Approve or reject a veterinarian with an audit note. |
+| `POST` | `/requests/` | Client | Create a service request for an owned pet. |
+| `GET` | `/requests/nearby/` | Verified, available veterinarian | Search pending requests within a radius. |
+| `POST` | `/requests/{request_id}/accept` | Verified, available veterinarian | Atomically accept a pending request. |
+| `PUT` | `/requests/{request_id}/status` | Request participant | Advance or cancel a request according to lifecycle rules. |
+
+## Verification workflow
+
+Veterinarian accounts are created with `vet_verified=false` and `is_available=false`. Administrators review pending accounts through `GET /admin/vets/pending` and then call `PUT /admin/vets/{vet_id}/verification` with `{ "verified": true, "notes": "..." }` or `{ "verified": false, "notes": "..." }`. Each review records the reviewer, timestamp, decision, and note. No public self-verification endpoint is exposed, and public registration cannot create administrator accounts.
+
+For local staging, provision the first administrator from the backend folder with `python scripts/bootstrap_admin.py`. The command prompts for the email, name, and password without writing the password to a file. Set `DATABASE_URL` first if the database is not the local default. For example:
+
+```powershell
+$env:DATABASE_URL="sqlite:///./vet_connect_local.db"
+python scripts/bootstrap_admin.py
+```
+
+An administrator can then sign in through `POST /token` and use the returned bearer token for the protected `/admin/vets/pending` and `/admin/vets/{vet_id}/verification` routes.
+
+## Database migrations
+
+Create a new migration after changing the SQLAlchemy models:
+
+```bash
+alembic revision --autogenerate -m "describe the change"
+alembic upgrade head
+```
+
+Always inspect autogenerated migrations before applying them to staging or production. Back up the database and test the downgrade path before destructive changes.
+
+## Staging with Docker
+
+The repository includes `Dockerfile` and `docker-compose.staging.yml` for a local PostgreSQL-backed staging stack. Change the example passwords and JWT secret before using it outside a disposable local environment:
+
+```bash
+docker compose -f docker-compose.staging.yml up --build
+curl http://localhost:8000/healthz
+```
+
+For a managed staging service, set `DATABASE_URL` to a PostgreSQL connection string, configure `JWT_SECRET_KEY` through the platform secret manager, set `ENVIRONMENT=staging`, and allow the deployed API origin in `CORS_ORIGINS`. Run `alembic upgrade head` as the release migration step before starting the API process.
+
+## Testing
+
+The test suite uses an isolated SQLite database and does not contact an external service. Run it with:
+
+```bash
+pytest -q
+```
+
+The tests cover registration, login, role enforcement, public administrator-signup prevention, administrator veterinarian review, pet ownership, request creation, veterinarian verification gates, atomic acceptance, and invalid lifecycle transitions. The current suite passes six tests.
+
+## Next production milestones
+
+The next implementation milestones are structured request and audit logging, rate limiting backed by a shared store, CI checks, and a realtime event channel for request status and location updates.
