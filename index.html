@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VetConnect</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%231aa3ff' d='M32 4C19 4 10 13.500 10 25c0 15 22 35 22 35s22-20 22-35C54 13.500 45 4 32 4z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#f3f8ff;--card:#fff;--line:#d6e4f5;--tx:#0d1b2e;--mu:#5b6f8c;--pr:#0a8ee6;--on:#fff;--ok:#12a36b;--er:#d9434e;--wa:#b7791f;--in:#eef5fd;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1424;--card:#101d33;--line:#1f3150;--tx:#eaf2ff;--mu:#8ea3c4;--pr:#1aa3ff;--on:#06121f;--ok:#2ecc8f;--er:#ff7b84;--wa:#f5b942;--in:#0b1729}}
+:root[data-theme="dark"]{--bg:#0a1424;--card:#101d33;--line:#1f3150;--tx:#eaf2ff;--mu:#8ea3c4;--pr:#1aa3ff;--on:#06121f;--ok:#2ecc8f;--er:#ff7b84;--wa:#f5b942;--in:#0b1729}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.logo b{color:var(--pr)}
+.sp{flex:1}
+main{max-width:980px;margin:0 auto;padding:22px 16px 60px;display:grid;gap:18px}
+.auth{max-width:420px;margin:40px auto 0}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+h2{margin:0 0 12px;font-size:18px;letter-spacing:-.01em}
+h3{margin:0 0 6px;font-size:15px}
+label{display:block;font-size:13px;color:var(--mu);font-weight:600;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:var(--in);color:var(--tx);font:inherit}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--pr);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;font-weight:700;border:0;border-radius:9px;padding:9px 16px;background:var(--pr);color:var(--on);cursor:pointer}
+button.g{background:transparent;color:var(--tx);border:1px solid var(--line)}
+button.d{background:transparent;color:var(--er);border:1px solid var(--er)}
+button.s{padding:6px 12px;font-size:13px}
+button:disabled{opacity:.5;cursor:wait}
+.tabs{display:flex;gap:6px;margin-bottom:6px}
+.tabs button{flex:1;background:transparent;color:var(--mu);border:1px solid var(--line)}
+.tabs button.on{background:var(--pr);color:var(--on);border-color:var(--pr)}
+.item{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.item p{margin:2px 0 0;color:var(--mu);font-size:14px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mu)}
+.tag.pending{color:var(--wa);border-color:var(--wa)}.tag.accepted,.tag.in_progress{color:var(--pr);border-color:var(--pr)}
+.tag.completed{color:var(--ok);border-color:var(--ok)}.tag.cancelled{color:var(--er);border-color:var(--er)}
+.note{padding:12px 14px;border-radius:10px;border:1px solid var(--line);border-left:4px solid var(--wa);margin-bottom:12px}
+.note.ok{border-left-color:var(--ok)}.note.bad{border-left-color:var(--er)}
+.empty{color:var(--mu);margin:8px 0 0}
+.chk{display:flex;align-items:center;gap:8px;margin:12px 0 4px;color:var(--tx);font-size:15px}
+.chk input{width:auto}
+.hint{font-size:12px;color:var(--mu);margin-top:6px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));max-width:92%;padding:10px 16px;border-radius:10px;background:var(--card);border:1px solid var(--pr);box-shadow:0 8px 30px rgba(0,0,0,.35);display:none;z-index:9}
+#toast.er{border-color:var(--er)}
+@media (max-width:560px){.row{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header id="hd"></header>
+<main id="app"></main>
+<div id="toast" role="status"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const DEF_API=(location.protocol==='http:'||location.protocol==='https:')?location.protocol+'//'+location.hostname+':8000':'http://127.0.0.1:8000';
+const S={api:ls.get('vc_api')||DEF_API,token:ls.get('vc_tok'),user:null,tab:'login',pets:[],nearby:null,pending:[],jobs:[]};
+const th=ls.get('vc_theme');if(th)document.documentElement.dataset.theme=th;
+
+const LOGO='<svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><path fill="var(--pr)" d="M32 4C19 4 10 13.5 10 25c0 15 22 35 22 35s22-20 22-35C54 13.500 45 4 32 4z"/><circle cx="32" cy="25" r="13" fill="var(--bg)"/><path fill="var(--pr)" d="M29 16h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></svg>';
+
+function toast(m,er){const t=$('#toast');t.textContent=m;t.className=er?'er':'';t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',er?6000:2800)}
+
+async function api(path,o={}){
+  const h={};if(S.token)h.Authorization='Bearer '+S.token;
+  let body=o.body;
+  if(body&&!(body instanceof URLSearchParams)){h['Content-Type']='application/json';body=JSON.stringify(body)}
+  let r;
+  try{r=await fetch(S.api.replace(/\/$/,'')+path,{method:o.method||'GET',headers:h,body})}
+  catch(e){
+    let up=false;
+    try{await fetch(S.api.replace(/\/$/,'')+'/healthz',{mode:'no-cors'});up=true}catch(x){}
+    throw new Error(up
+      ?'The API is running but blocked this page. Add '+location.origin+' to CORS_ORIGINS in the backend .env, then restart it.'
+      :'The API is not running at '+S.api+'. Start it with: uvicorn main:app --reload --port 8000')
+  }
+  let d=null;try{d=await r.json()}catch(e){}
+  if(!r.ok){
+    let m=d&&d.detail;
+    if(Array.isArray(m))m=m.map(x=>(x.loc||[]).slice(1).join('.')+': '+x.msg).join('; ');
+    if(r.status===401&&path!=='/token'&&S.token){logout(true)}
+    throw new Error(m||'Request failed ('+r.status+')')
+  }
+  return d
+}
+
+function logout(expired){S.token=null;S.user=null;ls.del('vc_tok');render();if(expired)toast('Session expired. Sign in again.',1)}
+const jk=()=>'vc_jobs_'+S.user.id;
+function loadJobs(){try{S.jobs=JSON.parse(ls.get(jk())||'[]')}catch(e){S.jobs=[]}}
+function track(r){const i=S.jobs.findIndex(j=>j.id===r.id);if(i>=0)S.jobs[i]=r;else S.jobs.unshift(r);ls.set(jk(),JSON.stringify(S.jobs))}
+const num=v=>v===''||v==null?null:parseFloat(v);
+
+async function boot(){
+  if(S.token){try{S.user=await api('/me');loadJobs()}catch(e){S.token=null}}
+  render()
+}
+
+function render(){
+  $('#hd').innerHTML='<div class="logo">'+LOGO+'<span>Vet<b>Connect</b></span></div><div class="sp"></div>'+
+    (S.user?'<span>'+esc(S.user.full_name)+' <span class="tag">'+esc(S.user.role)+'</span></span>':'')+
+    '<button class="g s" data-act="api">API: '+esc(S.api.replace(/^https?:\/\//,''))+'</button>'+
+    '<button class="g s" data-act="theme">Theme</button>'+
+    (S.user?'<button class="g s" data-act="out">Sign out</button>':'');
+  const a=$('#app');
+  if(!S.user){a.innerHTML=authView();return}
+  if(S.user.role==='client'){a.innerHTML=clientView();loadPets()}
+  else if(S.user.role==='vet'){a.innerHTML=vetView()}
+  else{a.innerHTML=adminView();loadPending()}
+}
+
+function authView(){
+  const L=S.tab==='login';
+  return '<section class="auth"><div class="tabs"><button class="'+(L?'on':'')+'" data-act="tab" data-v="login">Sign in</button><button class="'+(!L?'on':'')+'" data-act="tab" data-v="register">Create account</button></div>'+
+  '<form data-f="'+(L?'login':'register')+'">'+
+  (L?'':'<label>Full name</label><input name="full_name" required minlength="2" maxlength="160" autocomplete="name"><label>I am a</label><select name="role" id="role"><option value="client">Pet owner</option><option value="vet">Veterinarian</option></select>')+
+  '<label>Email</label><input name="email" type="email" required autocomplete="email">'+
+  '<label>Password</label><input name="password" type="password" required '+(L?'':'minlength="10" ')+'autocomplete="'+(L?'current':'new')+'-password">'+
+  (L?'':'<div class="hint">At least 10 characters, with a letter and a number.</div><div id="vloc" hidden><div class="row"><div><label>Latitude (optional)</label><input name="latitude" type="number" step="any" min="-90" max="90"></div><div><label>Longitude (optional)</label><input name="longitude" type="number" step="any" min="-180" max="180"></div></div><div class="hint">New vets are reviewed by an administrator before they can accept requests.</div></div>')+
+  '<div style="margin-top:16px"><button style="width:100%">'+(L?'Sign in':'Create account')+'</button></div></form></section>';
+}
+
+function ago(r){return ''}
+function reqItem(r,role){
+  const pet=(S.pets.find(p=>p.id===r.pet_id)||{}).name;
+  const acts=[];
+  if(role==='vet'&&r.status==='accepted')acts.push(['in_progress','Start visit','']);
+  if(role==='vet'&&r.status==='in_progress')acts.push(['completed','Mark completed','']);
+  if(r.status==='pending'||r.status==='accepted'||(role==='vet'&&r.status==='in_progress'))acts.push(['cancelled','Cancel','d']);
+  return '<div class="item"><div><h3>Request #'+r.id+(pet?' · '+esc(pet):'')+' <span class="tag '+r.status+'">'+r.status.replace('_',' ')+'</span></h3><p>'+esc(r.description)+'</p><p>Location '+r.latitude.toFixed(4)+', '+r.longitude.toFixed(4)+(r.vet_id?' · vet #'+r.vet_id:'')+'</p></div><div class="acts">'+
+  acts.map(x=>'<button class="s '+x[2]+'" data-act="status" data-id="'+r.id+'" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div></div>';
+}
+function jobsList(role){
+  return S.jobs.length?S.jobs.map(r=>reqItem(r,role)).join(''):'<p class="empty">Nothing here yet.</p>';
+}
+
+function clientView(){
+  return '<section><h2>My pets</h2><div id="pets"><p class="empty">Loading…</p></div>'+
+  '<form data-f="pet" style="margin-top:14px"><div class="row"><div><label>Name</label><input name="name" required maxlength="120"></div><div><label>Species</label><input name="species" required maxlength="80" placeholder="Dog, cat, goat…"></div></div>'+
+  '<div class="row"><div><label>Breed (optional)</label><input name="breed" maxlength="120"></div><div><label>Age (years)</label><input name="age" type="number" min="0" max="200" required></div></div>'+
+  '<div style="margin-top:14px"><button>Add pet</button></div></form></section>'+
+  '<section><h2>Request a vet</h2><form data-f="request"><label>Pet</label><select name="pet_id" id="petsel" required></select>'+
+  '<label>What is happening?</label><textarea name="description" rows="3" required minlength="5" maxlength="2000"></textarea>'+
+  '<div class="row"><div><label>Latitude</label><input name="latitude" type="number" step="any" min="-90" max="90" required></div><div><label>Longitude</label><input name="longitude" type="number" step="any" min="-180" max="180" required></div></div>'+
+  '<div class="acts" style="margin-top:14px"><button type="button" class="g" data-act="geo">Use my location</button><button>Send request</button></div></form></section>'+
+  '<section><h2>My requests</h2><div id="jobs">'+jobsList('client')+'</div><div class="hint">The API has no endpoint to list a client\'s requests, so this list is kept in this browser. Status changes made by a vet will not appear until the API adds one.</div></section>';
+}
+
+function vetView(){
+  const u=S.user;let n='';
+  if(!u.vet_verified){
+    n=u.verification_reviewed_at
+      ?'<div class="note bad"><b>Verification declined.</b> '+esc(u.verification_notes||'No note given.')+'</div>'
+      :'<div class="note"><b>Waiting for verification.</b> An administrator needs to approve your account before you can go available or accept requests.</div>';
+  }else n='<div class="note ok"><b>Verified.</b> You can accept requests when available.</div>';
+  const dis=u.vet_verified?'':' disabled';
+  return n+'<section><h2>Availability</h2><form data-f="avail"><label class="chk"><input type="checkbox" name="is_available"'+(u.is_available?' checked':'')+dis+'> Available for requests</label>'+
+  '<div class="row"><div><label>Latitude</label><input name="latitude" type="number" step="any" min="-90" max="90" value="'+(u.latitude==null?'':u.latitude)+'"'+dis+'></div><div><label>Longitude</label><input name="longitude" type="number" step="any" min="-180" max="180" value="'+(u.longitude==null?'':u.longitude)+'"'+dis+'></div></div>'+
+  '<div class="acts" style="margin-top:14px"><button type="button" class="g" data-act="geo"'+dis+'>Use my location</button><button'+dis+'>Save availability</button></div></form></section>'+
+  '<section><h2>Requests near you</h2><div class="acts" style="align-items:end"><div style="width:140px"><label>Radius (km)</label><input id="rad" type="number" value="10" min="1" step="any"></div><button data-act="nearby"'+dis+'>Search</button></div><div id="near">'+nearList()+'</div></section>'+
+  '<section><h2>My jobs</h2><div id="jobs">'+jobsList('vet')+'</div><div class="hint">Jobs you accept are tracked in this browser.</div></section>';
+}
+function nearList(){
+  if(S.nearby===null)return '<p class="empty">Search to see pending requests within your radius.</p>';
+  if(!S.nearby.length)return '<p class="empty">No pending requests in range. Try a larger radius.</p>';
+  return S.nearby.map(r=>'<div class="item"><div><h3>Request #'+r.id+'</h3><p>'+esc(r.description)+'</p><p>Location '+r.latitude.toFixed(4)+', '+r.longitude.toFixed(4)+'</p></div><button class="s" data-act="accept" data-id="'+r.id+'">Accept</button></div>').join('');
+}
+
+function adminView(){return '<section><h2>Veterinarians awaiting review</h2><div id="pend"><p class="empty">Loading…</p></div></section>'}
+async function loadPending(){
+  try{S.pending=await api('/admin/vets/pending')}catch(e){toast(e.message,1);return}
+  const el=$('#pend');if(!el)return;
+  el.innerHTML=S.pending.length?S.pending.map(v=>'<div class="item" style="display:block"><h3>'+esc(v.full_name)+' <span class="tag">#'+v.id+'</span></h3><p>'+esc(v.email)+'</p><label>Review note</label><input id="n'+v.id+'" maxlength="1000"><div class="acts" style="margin-top:10px"><button class="s" data-act="review" data-id="'+v.id+'" data-v="1">Approve</button><button class="s d" data-act="review" data-id="'+v.id+'" data-v="0">Reject</button></div></div>').join(''):'<p class="empty">No vets waiting. New sign-ups will show up here.</p>';
+}
+
+async function loadPets(){
+  try{S.pets=await api('/pets/')}catch(e){toast(e.message,1);return}
+  const el=$('#pets');if(!el)return;
+  el.innerHTML=S.pets.length?S.pets.map(p=>'<div class="item"><div><h3>'+esc(p.name)+'</h3><p>'+esc(p.species)+(p.breed?' · '+esc(p.breed):'')+' · '+p.age+' yr</p></div></div>').join(''):'<p class="empty">Add your first pet to request a visit.</p>';
+  const s=$('#petsel');if(s)s.innerHTML=S.pets.length?S.pets.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join(''):'<option value="">Add a pet first</option>';
+  const j=$('#jobs');if(j)j.innerHTML=jobsList('client');
+}
+
+const F={
+  async login(f,d){
+    const b=new URLSearchParams();b.set('username',d.email);b.set('password',d.password);
+    const t=await api('/token',{method:'POST',body:b});
+    S.token=t.access_token;ls.set('vc_tok',S.token);
+    S.user=await api('/me');loadJobs();render();
+  },
+  async register(f,d){
+    const body={email:d.email,full_name:d.full_name,role:d.role,password:d.password};
+    if(d.role==='vet'){const la=num(d.latitude),lo=num(d.longitude);if(la!=null&&lo!=null){body.latitude=la;body.longitude=lo}}
+    await api('/register',{method:'POST',body});
+    toast('Account created.');await F.login(f,d);
+  },
+  async pet(f,d){
+    await api('/pets/',{method:'POST',body:{name:d.name,species:d.species,breed:d.breed||null,age:parseInt(d.age,10)}});
+    f.reset();toast('Pet added.');loadPets();
+  },
+  async request(f,d){
+    const r=await api('/requests/',{method:'POST',body:{pet_id:parseInt(d.pet_id,10),description:d.description,latitude:parseFloat(d.latitude),longitude:parseFloat(d.longitude)}});
+    track(r);f.description.value='';toast('Request sent.');$('#jobs').innerHTML=jobsList('client');
+  },
+  async avail(f,d){
+    S.user=await api('/vets/me/availability',{method:'PUT',body:{is_available:f.is_available.checked,latitude:num(d.latitude),longitude:num(d.longitude)}});
+    toast('Availability saved.');render();
+  }
+};
+
+document.addEventListener('submit',async e=>{
+  const f=e.target;if(!f.dataset.f)return;e.preventDefault();
+  const b=f.querySelector('button:not([type=button])');b.disabled=true;
+  try{await F[f.dataset.f](f,Object.fromEntries(new FormData(f)))}catch(x){toast(x.message,1)}
+  b.disabled=false;
+});
+document.addEventListener('change',e=>{if(e.target.id==='role'){$('#vloc').hidden=e.target.value!=='vet'}});
+
+const A={
+  api(){const v=prompt('API base URL',S.api);if(v){S.api=v.trim();ls.set('vc_api',S.api);render()}},
+  theme(){const r=document.documentElement;const dark=r.dataset.theme==='dark';r.dataset.theme=dark?'light':'dark';ls.set('vc_theme',r.dataset.theme)},
+  out(){logout()},
+  tab(el){S.tab=el.dataset.v;render()},
+  geo(el){
+    const f=el.closest('form');
+    if(!navigator.geolocation)return toast('This browser cannot share location. Enter coordinates instead.',1);
+    navigator.geolocation.getCurrentPosition(p=>{f.latitude.value=p.coords.latitude.toFixed(6);f.longitude.value=p.coords.longitude.toFixed(6)},()=>toast('Location blocked. Enter coordinates instead.',1));
+  },
+  async status(el){
+    const r=await api('/requests/'+el.dataset.id+'/status',{method:'PUT',body:{status:el.dataset.v}});
+    track(r);$('#jobs').innerHTML=jobsList(S.user.role);toast('Request '+r.status.replace('_',' ')+'.');
+  },
+  async nearby(){
+    S.nearby=await api('/requests/nearby/?radius_km='+encodeURIComponent($('#rad').value||10));
+    $('#near').innerHTML=nearList();
+  },
+  async accept(el){
+    const r=await api('/requests/'+el.dataset.id+'/accept',{method:'POST'});
+    track(r);S.nearby=(S.nearby||[]).filter(x=>x.id!==r.id);
+    $('#near').innerHTML=nearList();$('#jobs').innerHTML=jobsList('vet');toast('Request accepted.');
+  },
+  async review(el){
+    const id=el.dataset.id,notes=$('#n'+id).value.trim()||null;
+    await api('/admin/vets/'+id+'/verification',{method:'PUT',body:{verified:el.dataset.v==='1',notes}});
+    toast(el.dataset.v==='1'?'Vet approved.':'Vet rejected.');loadPending();
+  }
+};
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-act]');if(!el||!A[el.dataset.act])return;
+  el.disabled=true;
+  try{await A[el.dataset.act](el)}catch(x){toast(x.message,1)}
+  el.disabled=false;
+});
+boot();
+</script>
+</body>
+</html>
